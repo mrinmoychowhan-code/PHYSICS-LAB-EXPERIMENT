@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wound Rotor Induction Motor - Virtual Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; display: flex; background: #f4f4f4; }
+  #theory { width: 35%; padding: 20px; border-right: 2px solid #ccc; }
+  #simulator { width: 65%; padding: 20px; }
+  .slider-box { margin: 15px 0; }
+  canvas { border: 1px solid #333; background: white; margin-top: 20px; }
+</style>
+</head>
+<body>
+  <div id="theory">
+    <h2>Performance of Wound Rotor Induction Motor</h2>
+    <p>
+      In this experiment, the performance of a wound rotor induction motor is studied 
+      under different load and rotor resistance conditions. By varying rotor resistance, 
+      the torque-speed characteristic can be controlled.
+    </p>
+    <img src="motor-diagram.png" alt="Motor Diagram" width="100%">
+  </div>
+
+  <div id="simulator">
+    <h2>Virtual Simulation</h2>
+    <div class="slider-box">
+      <label>Supply Voltage (V): </label>
+      <input type="range" id="voltage" min="100" max="440" value="220"> 
+      <span id="vVal">220</span> V
+    </div>
+
+    <div class="slider-box">
+      <label>Rotor Resistance (Ω): </label>
+      <input type="range" id="resistance" min="0" max="10" value="2"> 
+      <span id="rVal">2</span> Ω
+    </div>
+
+    <div class="slider-box">
+      <label>Load Torque (Nm): </label>
+      <input type="range" id="torque" min="0" max="50" value="10"> 
+      <span id="tVal">10</span> Nm
+    </div>
+
+    <h3>Results:</h3>
+    <p>Motor Speed: <span id="speed"></span> rpm</p>
+    <p>Stator Current: <span id="current"></span> A</p>
+    <p>Power Factor: <span id="pf"></span></p>
+
+    <canvas id="graph" width="500" height="300"></canvas>
+  </div>
+
+<script>
+let voltageSlider=document.getElementById("voltage");
+let resistanceSlider=document.getElementById("resistance");
+let torqueSlider=document.getElementById("torque");
+
+let vVal=document.getElementById("vVal");
+let rVal=document.getElementById("rVal");
+let tVal=document.getElementById("tVal");
+
+let speedOut=document.getElementById("speed");
+let currentOut=document.getElementById("current");
+let pfOut=document.getElementById("pf");
+
+let canvas=document.getElementById("graph");
+let ctx=canvas.getContext("2d");
+
+function update(){
+  let V=+voltageSlider.value;
+  let R=+resistanceSlider.value;
+  let T=+torqueSlider.value;
+
+  vVal.textContent=V;
+  rVal.textContent=R;
+  tVal.textContent=T;
+
+  // --- Simple model (not exact machine eqns, for demo only) ---
+  let Ns=1500; // synchronous speed rpm (4 pole, 50Hz)
+  let slip= (T/(R+1)) * 0.02; 
+  if(slip>1) slip=1;
+  let N=Ns*(1-slip);
+
+  let I=(V/220)*(1+slip*5); 
+  let pf=(1/(1+R/5)).toFixed(2);
+
+  speedOut.textContent=N.toFixed(0);
+  currentOut.textContent=I.toFixed(1);
+  pfOut.textContent=pf;
+
+  // draw Torque-Speed curve
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.beginPath();
+  ctx.moveTo(50,250);
+  for(let s=0.01;s<=1;s+=0.01){
+    let torque=(V/220)*100*(s/(R+0.5+s*5));
+    let speed=Ns*(1-s);
+    let x=50+speed/4; 
+    let y=250-torque*2;
+    if(y<20) y=20;
+    ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle="blue"; ctx.lineWidth=2; ctx.stroke();
+
+  // mark operating point
+  let opX=50+N/4;
+  let opY=250-T*2;
+  ctx.beginPath();
+  ctx.arc(opX,opY,5,0,2*Math.PI);
+  ctx.fillStyle="red"; ctx.fill();
+}
+
+voltageSlider.oninput=update;
+resistanceSlider.oninput=update;
+torqueSlider.oninput=update;
+update();
+</script>
+</body>
+</html>
